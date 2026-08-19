@@ -1,0 +1,1 @@
+- [Orval Zod numeric schema compatibility](orval-zod-number-format.md) — use OpenAPI numbers for whole values until the generator/runtime mismatch is resolved.

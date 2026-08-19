@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ClerkProvider, Show, SignIn, SignUp } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
 import {
   Activity as ActivityIcon,
   ArrowDownRight,
@@ -57,6 +60,51 @@ import NotFound from '@/pages/not-found';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 
 const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#bff04b',
+    colorForeground: '#f5f5f4',
+    colorMutedForeground: '#94a3b8',
+    colorDanger: '#fb923c',
+    colorBackground: '#111a2b',
+    colorInput: '#0d1321',
+    colorInputForeground: '#f5f5f4',
+    colorNeutral: '#334155',
+    fontFamily: 'Manrope, sans-serif',
+    borderRadius: '12px',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'w-[440px] max-w-full overflow-hidden rounded-2xl bg-[#111a2b] border border-slate-700',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-stone-100',
+    headerSubtitle: 'text-slate-400',
+    formFieldLabel: 'text-slate-300',
+    socialButtonsBlockButtonText: 'text-stone-100',
+    footerActionLink: 'text-lime-300',
+    footerActionText: 'text-slate-400',
+    dividerText: 'text-slate-500',
+    formButtonPrimary: 'bg-lime-300 text-slate-950 hover:bg-lime-200',
+    formFieldInput: 'bg-[#0d1321] border-slate-700 text-stone-100',
+    footerAction: 'bg-transparent',
+    dividerLine: 'bg-slate-700',
+  },
+};
 
 const sampleLeague: League = {
   id: 'demo',
@@ -241,7 +289,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-slate-800/80 bg-[#0d1321]/85 px-4 backdrop-blur-xl sm:px-8">
           <button type="button" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-400 hover:text-stone-100 md:hidden" data-testid="button-open-menu"><Menu size={21} /></button>
           <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex"><span className="font-mono uppercase tracking-[.14em]">Season</span><span className="text-stone-200">2024/25</span><span className="mx-2 h-3 w-px bg-slate-700" /><span className="font-mono uppercase tracking-[.14em]">Gameweek</span><span className="rounded-md bg-orange-300/10 px-2 py-1 font-mono text-orange-300">32</span></div>
-          <div className="ml-auto flex items-center gap-3"><Link href="/connect" className="hidden items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition-colors hover:border-lime-300/50 hover:text-lime-200 sm:flex" data-testid="link-header-connect"><Plus size={14} /> New league</Link><div className="flex items-center gap-3 border-l border-slate-800 pl-3"><Avatar label="JR" /><div className="hidden text-right sm:block"><div className="text-xs font-bold text-stone-200">Jordan Reed</div><div className="font-mono text-[9px] uppercase tracking-[.12em] text-slate-500">League admin</div></div></div></div>
+          <div className="ml-auto flex items-center gap-3"><Link href="/connect" className="hidden items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition-colors hover:border-lime-300/50 hover:text-lime-200 sm:flex" data-testid="link-header-connect"><Plus size={14} /> New league</Link><Show when="signed-out"><Link href="/sign-in" className="rounded-lg bg-lime-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-lime-200" data-testid="link-sign-in">Sign in</Link></Show><Show when="signed-in"><div className="flex items-center gap-3 border-l border-slate-800 pl-3"><Avatar label="JR" /><div className="hidden text-right sm:block"><div className="text-xs font-bold text-stone-200">League admin</div><div className="font-mono text-[9px] uppercase tracking-[.12em] text-slate-500">Signed in</div></div></div></Show></div>
         </header>
         <main className="control-room-grid min-h-[calc(100dvh-72px)] px-4 py-8 sm:px-8 lg:px-10">{children}</main>
       </div>
@@ -346,14 +394,22 @@ function ConnectPage({ onConnected }: { onConnected: (league: League) => void })
   return <div className="mx-auto max-w-[1100px]"><div className="grid items-center gap-10 lg:grid-cols-[.9fr_1.1fr] lg:gap-16"><div className="animate-rise"><div className="eyebrow mb-4">Open the room</div><h1 className="font-display text-5xl font-bold leading-[.95] tracking-[-.06em] text-stone-100 sm:text-6xl">Bring your<br /><span className="text-lime-300">league with you.</span></h1><p className="mt-6 max-w-md text-sm leading-7 text-slate-400">FPLROOM turns a private mini-league into a matchday control room. Connect the live table, then give your mates somewhere worth checking.</p><div className="mt-8 space-y-3"><div className="flex items-center gap-3 text-xs text-slate-400"><span className="rounded-lg bg-lime-300/10 p-2 text-lime-300"><BarChart3 size={15} /></span>Live standings and form signals</div><div className="flex items-center gap-3 text-xs text-slate-400"><span className="rounded-lg bg-orange-300/10 p-2 text-orange-300"><Swords size={15} /></span>Head-to-head fixtures every gameweek</div><div className="flex items-center gap-3 text-xs text-slate-400"><span className="rounded-lg bg-sky-300/10 p-2 text-sky-300"><Trophy size={15} /></span>Private competitions for the run-in</div></div></div><section className="panel animate-rise stagger-2 rounded-2xl p-6 sm:p-8"><div className="flex rounded-xl border border-slate-700 bg-slate-950/30 p-1"><button type="button" onClick={() => { setMode('connect'); setMessage(''); }} className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors ${mode === 'connect' ? 'bg-slate-700 text-stone-100' : 'text-slate-500 hover:text-stone-200'}`} data-testid="button-mode-connect">Connect existing</button><button type="button" onClick={() => { setMode('create'); setMessage(''); }} className={`flex-1 rounded-lg px-3 py-2.5 text-xs font-bold transition-colors ${mode === 'create' ? 'bg-slate-700 text-stone-100' : 'text-slate-500 hover:text-stone-200'}`} data-testid="button-mode-create">Create new league</button></div><form onSubmit={submit} className="mt-8 space-y-5"><div><div className="eyebrow text-orange-300">{mode === 'connect' ? 'Connect a mini-league' : 'Create your private room'}</div><h2 className="mt-1 font-display text-2xl font-bold text-stone-100">{mode === 'connect' ? 'Plug in the live table.' : 'Name the competition.'}</h2></div><label className="block"><span className="mb-2 block text-xs font-bold text-slate-300">League name</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="The Tuesday Club" className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-3 text-sm text-stone-100 outline-none placeholder:text-slate-600 focus:border-lime-300/70" data-testid="input-league-name" /></label>{mode === 'connect' ? <label className="block"><span className="mb-2 block text-xs font-bold text-slate-300">FPL mini-league ID</span><input required value={fplLeagueId} onChange={(event) => setFplLeagueId(event.target.value)} placeholder="e.g. 458291" inputMode="numeric" className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-3 text-sm text-stone-100 outline-none placeholder:text-slate-600 focus:border-lime-300/70" data-testid="input-fpl-league-id" /><span className="mt-2 block text-[11px] leading-5 text-slate-500">Find it in the URL of your official FPL mini-league.</span></label> : null}<label className="block"><span className="mb-2 block text-xs font-bold text-slate-300">Season</span><select value={season} onChange={(event) => setSeason(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#111a2b] px-4 py-3 text-sm text-stone-100 outline-none focus:border-lime-300/70" data-testid="select-league-season"><option value="2024/25">2024/25</option><option value="2025/26">2025/26</option></select></label><button type="submit" disabled={pending || !name.trim() || (mode === 'connect' && !fplLeagueId.trim())} className="flex w-full items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3.5 text-sm font-bold text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50" data-testid="button-submit-league">{pending ? 'Opening room…' : mode === 'connect' ? <><Link2 size={16} /> Connect mini-league</> : <><Plus size={16} /> Create private league</>}</button>{message ? <p className="text-center text-xs text-orange-300" data-testid="status-connect">{message}</p> : null}</form></section></div></div>;
 }
 
+function SignInPage() {
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#0d1321] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
+}
+
+function SignUpPage() {
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#0d1321] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>;
+}
+
 function Router({ leagueId, onConnected }: { leagueId: string; onConnected: (league: League) => void }) {
   const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}><AppShell><Switch><Route path="/" component={() => <DashboardPage leagueId={leagueId} />} /><Route path="/standings" component={() => <StandingsPage leagueId={leagueId} />} /><Route path="/head-to-head" component={() => <HeadToHeadPage leagueId={leagueId} />} /><Route path="/competitions" component={() => <CompetitionsPage leagueId={leagueId} />} /><Route path="/connect" component={() => <ConnectPage onConnected={onConnected} />} /><Route component={NotFound} /></Switch></AppShell></ErrorBoundary>;
+  return <ErrorBoundary resetKey={location}><Switch><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><AppShell><Switch><Route path="/" component={() => <DashboardPage leagueId={leagueId} />} /><Route path="/standings" component={() => <StandingsPage leagueId={leagueId} />} /><Route path="/head-to-head" component={() => <HeadToHeadPage leagueId={leagueId} />} /><Route path="/competitions" component={() => <CompetitionsPage leagueId={leagueId} />} /><Route path="/connect" component={() => <ConnectPage onConnected={onConnected} />} /><Route component={NotFound} /></Switch></AppShell></Switch></ErrorBoundary>;
 }
 
 function App() {
   const [leagueId, setLeagueId] = useState(() => localStorage.getItem('fpl-league-id') ?? 'demo');
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router leagueId={leagueId} onConnected={(league) => setLeagueId(league.id)} /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <WouterRouter base={basePath}><ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`}><QueryClientProvider client={queryClient}><TooltipProvider><Router leagueId={leagueId} onConnected={(league) => setLeagueId(league.id)} /><Toaster /></TooltipProvider></QueryClientProvider></ClerkProvider></WouterRouter>;
 }
 
 export default App;

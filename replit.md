@@ -1,10 +1,10 @@
-# [Project name]
+# FPL League Manager
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A premium private-league hub that turns Fantasy Premier League scores into standings, head-to-head fixtures, and custom competitions.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -22,15 +22,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — API contract; regenerate clients after editing.
+- `artifacts/api-server/src/routes/leagues.ts` — league dashboard, standings, fixtures, and competition endpoints.
+- `artifacts/fpl-league-manager/src/App.tsx` — app routes and client-side league experience.
+- `artifacts/fpl-league-manager/src/index.css` — visual tokens and product styling.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first-release league API returns a coherent seeded league snapshot so every major screen works before a real FPL league is connected.
+- OpenAPI is the source of truth for both the Express response validation and generated React Query hooks.
+- Clerk provides sign-in and sign-up; browsing the home dashboard remains open so prospective league members can understand the product before joining.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- League dashboard with gameweek context, activity, leader, and power-ranking signals.
+- Traditional FPL standings and head-to-head tables with a current-fixture view.
+- A league connection/create flow and a working competition creation surface.
+- Branded authentication routes for user registration and login.
 
 ## User preferences
 
@@ -38,7 +46,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run OpenAPI code generation after changing the spec; API server and frontend import the generated outputs.
+- Vite services require workflow-provided `PORT` and `BASE_PATH`; use their managed workflows rather than a root dev command.
 
 ## Pointers
 

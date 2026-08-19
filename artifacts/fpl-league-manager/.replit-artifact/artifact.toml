@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "FPL League Manager"
+description = "A premium fantasy sports platform for FPL mini-leagues to connect their league, track standings, and run custom head-to-head competitions."
+version = "1.0.0"
+id = "artifacts/fpl-league-manager"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25779
+
+[services.development]
+run = "pnpm --filter @workspace/fpl-league-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fpl-league-manager", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/fpl-league-manager/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25779"
+BASE_PATH = "/"

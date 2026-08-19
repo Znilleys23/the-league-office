@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: leagues
+    description: League and competition operations
 paths:
   /healthz:
     get:
@@ -24,13 +26,242 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /leagues/{leagueId}/dashboard:
+    get:
+      operationId: getLeagueDashboard
+      tags: [leagues]
+      summary: Get the league dashboard
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      responses:
+        "200":
+          description: Dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeagueDashboard"
+  /leagues/{leagueId}/standings:
+    get:
+      operationId: getLeagueStandings
+      tags: [leagues]
+      summary: Get traditional FPL standings
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      responses:
+        "200":
+          description: League standings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Standing"
+  /leagues/{leagueId}/head-to-head:
+    get:
+      operationId: getHeadToHeadStandings
+      tags: [leagues]
+      summary: Get head-to-head standings
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      responses:
+        "200":
+          description: Head-to-head table
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HeadToHeadStanding"
+  /leagues/{leagueId}/schedule:
+    get:
+      operationId: getHeadToHeadSchedule
+      tags: [leagues]
+      summary: Get the current gameweek schedule
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      responses:
+        "200":
+          description: Matchups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matchup"
+  /leagues:
+    post:
+      operationId: createLeague
+      tags: [leagues]
+      summary: Create a league
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeagueInput"
+      responses:
+        "201":
+          description: Created league
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/League"
+  /leagues/connect:
+    post:
+      operationId: connectFplLeague
+      tags: [leagues]
+      summary: Connect an existing FPL mini-league
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FplConnectInput"
+      responses:
+        "200":
+          description: Connected league
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/League"
+  /leagues/{leagueId}/competitions:
+    post:
+      operationId: createCompetition
+      tags: [leagues]
+      summary: Create a competition
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompetitionInput"
+      responses:
+        "201":
+          description: Created competition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Competition"
 components:
+  parameters:
+    LeagueId:
+      name: leagueId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
+    League:
+      type: object
+      required: [id, name, season, managerCount, currentGameweek, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        season: { type: string }
+        managerCount: { type: number }
+        currentGameweek: { type: number }
+        updatedAt: { type: string }
+        fplLeagueId: { type: ["string", "null"] }
+    LeagueInput:
+      type: object
+      required: [name, season]
+      properties:
+        name: { type: string, minLength: 1 }
+        season: { type: string, minLength: 1 }
+    FplConnectInput:
+      type: object
+      required: [fplLeagueId, name, season]
+      properties:
+        fplLeagueId: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        season: { type: string, minLength: 1 }
+    Standing:
+      type: object
+      required: [rank, manager, teamName, gameweekPoints, totalPoints, previousRank, movement]
+      properties:
+        rank: { type: number }
+        manager: { type: string }
+        teamName: { type: string }
+        gameweekPoints: { type: number }
+        totalPoints: { type: number }
+        previousRank: { type: number }
+        movement: { type: number }
+        initials: { type: string }
+    HeadToHeadStanding:
+      type: object
+      required: [rank, manager, wins, losses, draws, pointsFor, pointsAgainst, pointDifference, leaguePoints, streak]
+      properties:
+        rank: { type: number }
+        manager: { type: string }
+        wins: { type: number }
+        losses: { type: number }
+        draws: { type: number }
+        pointsFor: { type: number }
+        pointsAgainst: { type: number }
+        pointDifference: { type: number }
+        leaguePoints: { type: number }
+        streak: { type: string }
+        initials: { type: string }
+    Matchup:
+      type: object
+      required: [id, home, away, homeScore, awayScore, status]
+      properties:
+        id: { type: string }
+        home: { type: string }
+        away: { type: string }
+        homeScore: { type: number }
+        awayScore: { type: number }
+        status: { type: string }
+        featured: { type: boolean }
+    LeagueDashboard:
+      type: object
+      required: [league, topScorer, activity, powerRanking]
+      properties:
+        league: { $ref: "#/components/schemas/League" }
+        topScorer:
+          $ref: "#/components/schemas/Standing"
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+        powerRanking:
+          type: array
+          items: { $ref: "#/components/schemas/PowerRanking" }
+    Activity:
+      type: object
+      required: [id, title, detail, time, kind]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        time: { type: string }
+        kind: { type: string }
+    PowerRanking:
+      type: object
+      required: [rank, manager, movement, score]
+      properties:
+        rank: { type: number }
+        manager: { type: string }
+        movement: { type: number }
+        score: { type: number }
+    Competition:
+      type: object
+      required: [id, name, type, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string }
+        status: { type: string }
+    CompetitionInput:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string, minLength: 1 }
+        type: { type: string }
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 

@@ -6,6 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
+export interface Matchup {
+  id: string;
+  home: string;
+  away: string;
+  homeScore: number;
+  awayScore: number;
   status: string;
+  featured?: boolean;
 }

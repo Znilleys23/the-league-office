@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --radius-lg: 18px;
+  --radius-md: 12px;
+}
+
+:root {
+  --background: 222 35% 8%;
+  --foreground: 48 28% 94%;
+  --card: 222 29% 12%;
+  --card-foreground: 48 28% 94%;
+  --card-border: 220 22% 20%;
+  --border: 220 22% 20%;
+  --input: 220 22% 24%;
+  --ring: 68 88% 56%;
+  --primary: 68 88% 56%;
+  --primary-foreground: 222 35% 8%;
+  --secondary: 215 24% 17%;
+  --secondary-foreground: 48 28% 94%;
+  --muted: 220 20% 16%;
+  --muted-foreground: 219 13% 62%;
+  --accent: 14 91% 66%;
+  --accent-foreground: 222 35% 8%;
+  --destructive: 2 84% 62%;
+  --destructive-foreground: 48 28% 94%;
+  --sidebar: 224 38% 7%;
+  --sidebar-foreground: 48 28% 94%;
+  --sidebar-border: 220 24% 16%;
+  --sidebar-primary: 68 88% 56%;
+  --sidebar-primary-foreground: 222 35% 8%;
+  --sidebar-accent: 220 25% 14%;
+  --sidebar-accent-foreground: 48 28% 94%;
+  --sidebar-ring: 68 88% 56%;
+  --app-font-sans: 'Manrope', sans-serif;
+  --app-font-mono: 'DM Mono', monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+  --radius: 12px;
+  --shadow-card: 0 18px 50px rgba(4, 8, 18, 0.28);
+}
+
+* { box-sizing: border-box; }
+html { background: hsl(var(--background)); }
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 90% -10%, rgba(191, 225, 69, 0.08), transparent 28rem),
+    hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--app-font-sans);
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--app-font-mono); }
+.control-room-grid {
+  background-image:
+    linear-gradient(rgba(191,225,69,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(191,225,69,0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+.pitch-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .28;
+  background:
+    linear-gradient(90deg, transparent 49.8%, rgba(191,225,69,.14) 50%, transparent 50.2%),
+    linear-gradient(0deg, transparent 49.8%, rgba(191,225,69,.08) 50%, transparent 50.2%);
+}
+.panel {
+  border: 1px solid hsl(var(--card-border));
+  background: linear-gradient(145deg, rgba(24,31,48,.97), rgba(16,22,36,.97));
+  box-shadow: var(--shadow-card);
+}
+.panel-soft {
+  border: 1px solid hsl(var(--card-border));
+  background: rgba(20, 27, 42, .72);
+}
+.eyebrow {
+  color: hsl(var(--primary));
+  font-family: var(--app-font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.animate-rise { animation: rise-in .55s cubic-bezier(.2,.8,.2,1) both; }
+.animate-pulse-soft { animation: pulse-soft 2.4s ease-in-out infinite; }
+.stagger-1 { animation-delay: 70ms; }
+.stagger-2 { animation-delay: 130ms; }
+.stagger-3 { animation-delay: 190ms; }
+.stagger-4 { animation-delay: 250ms; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse-soft { 0%,100% { opacity: .48; } 50% { opacity: 1; } }
+@media (max-width: 767px) {
+  .mobile-scroll { overflow-x: auto; }
+  .mobile-scroll > * { min-width: 680px; }
+}

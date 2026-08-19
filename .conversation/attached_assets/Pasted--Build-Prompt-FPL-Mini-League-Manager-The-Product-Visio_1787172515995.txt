@@ -1,0 +1,793 @@
+# Build Prompt: FPL Mini-League Manager
+
+## The Product Vision
+
+Build a modern web application called **FPL League Manager**.
+
+This platform is designed for Fantasy Premier League (FPL) mini-leagues that want more ways to compete against their friends.
+
+Fantasy Premier League is the underlying game and scoring system. This application sits on top of FPL and gives mini-league managers tools to create custom competitions, tournaments, schedules, standings, and league rules.
+
+The core idea is:
+
+> **FPL provides the fantasy teams. FPL League Manager provides the competitions.**
+
+The website should feel like a modern sports league management platform combining elements of:
+
+* Fantasy Premier League
+* ESPN Fantasy Football
+* NFL fantasy playoffs
+* March Madness brackets
+* FA Cup / League Cup competitions
+* UEFA Champions League
+* FIFA World Cup group stages
+
+The product should be exciting, competitive, social, and highly customizable.
+
+The design should feel like a premium sports platform rather than a traditional corporate dashboard.
+
+---
+
+# CORE USER FLOW
+
+## Step 1: Create an Account
+
+Users can:
+
+* Create an account
+* Log in
+* Create a new league
+* Join an existing private league using an invitation link or code
+
+The user who creates the league automatically becomes the **League Manager**.
+
+---
+
+# STEP 2: CONNECT AN EXISTING FPL MINI-LEAGUE
+
+League Managers should be able to connect their existing FPL mini-league to the platform.
+
+The system should allow the manager to enter:
+
+* FPL mini-league ID
+* League name
+* Season
+
+The application should retrieve and store:
+
+* All managers in the league
+* Team names
+* FPL manager names
+* Overall league standings
+* Gameweek scores
+* Total points
+* Historical gameweek scores
+
+The platform should treat FPL as the source of truth for fantasy points.
+
+The application should use the official FPL public data endpoints where possible.
+
+Create a data architecture that can automatically synchronize league standings and scores after each FPL gameweek.
+
+---
+
+# MAIN LEAGUE DASHBOARD
+
+Once a league is connected, create a visually impressive league homepage.
+
+The dashboard should include:
+
+## League Header
+
+Display:
+
+* League name
+* League logo or avatar
+* Current season
+* Number of managers
+* Current gameweek
+* Last updated time
+
+---
+
+## Main Navigation
+
+Create the following navigation tabs:
+
+* Home
+* Standings
+* Head-to-Head
+* Tournaments
+* Schedule
+* Players
+* History
+* Awards
+* Rules
+* Admin
+
+The Admin section should only be visible to league managers.
+
+---
+
+# FEATURE 1: TRADITIONAL FPL LEAGUE TABLE
+
+Display the normal FPL standings.
+
+Columns should include:
+
+* Rank
+* Manager
+* Team Name
+* Gameweek Points
+* Total Points
+* Previous Rank
+* Rank Movement
+
+Use arrows or indicators to show movement up or down the standings.
+
+Make the standings visually engaging and easy to scan.
+
+---
+
+# FEATURE 2: HEAD-TO-HEAD LEAGUE
+
+This should be one of the flagship features.
+
+Allow league managers to create a custom Head-to-Head competition using normal FPL gameweek scores.
+
+Example:
+
+Manager A scores 67 points.
+
+Manager B scores 61 points.
+
+Manager A wins the matchup.
+
+Standings use traditional American fantasy football scoring:
+
+* Win = 3 points
+* Draw = 1 point
+* Loss = 0 points
+
+Display a full league table containing:
+
+* Rank
+* Manager
+* Wins
+* Losses
+* Draws
+* Points For
+* Points Against
+* Point Difference
+* League Points
+* Current Streak
+
+---
+
+## Head-to-Head Scheduling
+
+Allow league managers to:
+
+* Automatically generate a schedule
+* Manually edit matchups
+* Choose which gameweeks the competition runs
+* Select the number of regular-season weeks
+* Create playoff brackets
+
+For example:
+
+28 managers could play:
+
+* A regular season
+* Playoffs for the top 8 managers
+* Consolation playoffs
+* Championship game
+
+The schedule should intelligently avoid duplicate matchups when possible.
+
+---
+
+# FEATURE 3: FPL CUP TOURNAMENT
+
+Allow managers to create a knockout cup competition.
+
+The tournament should support:
+
+* Single elimination
+* Two-legged ties
+* Random draws
+* Seeded draws
+* Automatic advancement
+* Byes
+
+The league manager should be able to select:
+
+* Tournament name
+* Start gameweek
+* End gameweek
+* Number of participants
+* Seeding method
+* Tie-breaking rules
+
+Example:
+
+A 28-team league begins with a preliminary round.
+
+The competition progresses through:
+
+* Preliminary Round
+* Round of 16
+* Quarterfinals
+* Semifinals
+* Final
+
+Each matchup is determined by FPL points during the selected gameweek.
+
+The platform should automatically update the bracket.
+
+Create a visually impressive knockout bracket similar to an FA Cup or March Madness tournament.
+
+---
+
+# FEATURE 4: WORLD CUP-STYLE TOURNAMENT
+
+This is a major feature.
+
+League managers should be able to create a group-stage tournament.
+
+Example:
+
+28 managers are randomly placed into:
+
+7 groups of 4 managers.
+
+Each manager competes against the other managers in their group.
+
+The league manager should be able to configure:
+
+* Number of groups
+* Number of managers per group
+* Number of teams advancing
+* Random or seeded groups
+* Match format
+* Tournament start gameweek
+
+Group standings should include:
+
+* Played
+* Wins
+* Draws
+* Losses
+* Goals For / Points For
+* Goals Against / Points Against
+* Difference
+* Tournament Points
+
+Use:
+
+* Win = 3 points
+* Draw = 1 point
+* Loss = 0 points
+
+After the group stage, automatically generate a knockout bracket.
+
+The system should support:
+
+* Round of 16
+* Quarterfinals
+* Semifinals
+* Third-place match
+* Final
+
+The application should intelligently handle awkward numbers of teams such as:
+
+* 20 teams
+* 24 teams
+* 28 teams
+* 32 teams
+
+Create tournament visuals that feel similar to a professional soccer competition.
+
+---
+
+# FEATURE 5: CUSTOM COMPETITION BUILDER
+
+This should become the heart of the platform.
+
+League Managers should be able to create custom competitions.
+
+Create a competition builder where the manager selects:
+
+## Competition Type
+
+Options:
+
+* Head-to-Head League
+* Knockout Cup
+* Group Stage + Knockout
+* Swiss Tournament
+* Playoffs
+* Custom Challenge
+
+---
+
+## Participants
+
+Allow:
+
+* Entire league
+* Selected managers
+* Top-ranked managers
+* Bottom-ranked managers
+* Randomly selected managers
+
+---
+
+## Time Period
+
+Select:
+
+* Starting gameweek
+* Ending gameweek
+
+---
+
+## Scoring Method
+
+Options:
+
+* Single gameweek score
+* Cumulative score over multiple gameweeks
+* Best score across multiple gameweeks
+* Aggregate home and away score
+
+---
+
+## Tie Breakers
+
+Allow the manager to choose:
+
+* Higher total FPL score
+* Higher current overall rank
+* Higher gameweek score
+* Previous season ranking
+* Random draw
+
+---
+
+# FEATURE 6: PLAYOFF SYSTEM
+
+Create a fantasy football-style playoff system.
+
+The league manager can choose:
+
+* Top 4
+* Top 6
+* Top 8
+* Top 12
+* Custom number of playoff teams
+
+Support:
+
+* Single elimination
+* Two-week aggregate matchups
+* Byes for higher seeds
+* Reseeding after each round
+
+The playoff system should automatically create the bracket based on regular-season standings.
+
+Example:
+
+Seed 1 receives a bye.
+
+Seed 2 receives a bye.
+
+Seed 3 plays Seed 6.
+
+Seed 4 plays Seed 5.
+
+The winners advance automatically.
+
+---
+
+# FEATURE 7: WEEKLY AWARDS
+
+Automatically generate weekly awards.
+
+Examples:
+
+## Highest Scorer
+
+Highest gameweek score.
+
+## Biggest Bottler
+
+Manager who had the largest drop in rank.
+
+## Heartbreak of the Week
+
+Manager who scored a high score but still lost their head-to-head matchup.
+
+## Lucky Win
+
+Manager who won their matchup despite being outscored by most other managers.
+
+## King of the Week
+
+Top gameweek score.
+
+## Wooden Spoon Watch
+
+Lowest overall league ranking.
+
+## Hot Streak
+
+Most consecutive head-to-head wins.
+
+## Giant Killer
+
+Lower-ranked manager defeating a significantly higher-ranked manager.
+
+Create fun, social, visually engaging award cards.
+
+---
+
+# FEATURE 8: RIVALRIES
+
+Allow league managers to designate rivalries between managers.
+
+Example:
+
+Team A vs Team B is marked as a rivalry.
+
+When those managers meet in Head-to-Head play:
+
+* Highlight the matchup
+* Show historical record
+* Show all-time points
+* Show recent results
+* Display a rivalry trophy or badge
+
+Create a dedicated Rivalries section.
+
+---
+
+# FEATURE 9: LEAGUE HISTORY
+
+Create a permanent league history database.
+
+Track:
+
+* Previous season champions
+* Head-to-head champions
+* Cup winners
+* Tournament winners
+* Highest individual gameweek score
+* Worst individual gameweek score
+* Most wins
+* Longest winning streak
+* Most consecutive losses
+
+Create a virtual **Trophy Room**.
+
+Each competition winner should receive a digital trophy.
+
+The Trophy Room should feel like a hall of fame.
+
+---
+
+# FEATURE 10: THE LEAGUE RECORD BOOK
+
+Create a statistics section called:
+
+# The Record Book
+
+Include records such as:
+
+* Highest Gameweek Score
+* Lowest Gameweek Score
+* Biggest Head-to-Head Win
+* Longest Winning Streak
+* Longest Losing Streak
+* Most Cup Titles
+* Most Championships
+* Most Head-to-Head Wins
+* Most Tournament Appearances
+
+These records should be stored permanently across seasons.
+
+---
+
+# FEATURE 11: POWER RANKINGS
+
+Create a weekly Power Rankings section.
+
+This should NOT simply mirror the overall FPL standings.
+
+Create a ranking algorithm using:
+
+* Recent 5 gameweek performance
+* Head-to-head performance
+* Winning streaks
+* Tournament success
+* Overall points
+
+Display:
+
+* Current ranking
+* Previous ranking
+* Movement
+
+Example:
+
+#1 Team A ↑2
+
+#2 Team B ↓1
+
+Make this visually similar to professional sports power rankings.
+
+---
+
+# FEATURE 12: PREDICTIONS
+
+Add a simple prediction system.
+
+Each week, users can predict:
+
+* Winner of the Week
+* Highest FPL score
+* Head-to-head matchup winners
+* Cup winners
+
+Track prediction accuracy.
+
+Create a Prediction League table.
+
+---
+
+# FEATURE 13: CUSTOM PUNISHMENTS AND SIDE BETS
+
+Allow league managers to create optional side challenges.
+
+Examples:
+
+* Last place punishment tracker
+* Most weekly losses
+* Most transfer hits
+* Lowest captain score
+* Most bench points wasted
+
+Allow the league manager to create custom awards and rules.
+
+This section should be optional and private to the league.
+
+---
+
+# FEATURE 14: LEAGUE CHAT / ACTIVITY FEED
+
+Create a simple social activity feed.
+
+Automatically post events such as:
+
+* Manager A defeated Manager B
+* Manager C won the Cup
+* Manager D moved into first place
+* Manager E recorded the highest gameweek score
+
+Allow managers to:
+
+* Comment
+* React
+* Celebrate wins
+
+Keep the design lightweight.
+
+This should feel like a private fantasy sports community.
+
+---
+
+# ADMIN TOOLS
+
+League managers need strong administrative control.
+
+Create an Admin Dashboard.
+
+Allow managers to:
+
+* Create competitions
+* Edit competition names
+* Set schedules
+* Manually adjust matchups
+* Resolve disputes
+* Override results
+* Add custom rules
+* Invite managers
+* Remove managers
+* Upload a league logo
+
+Include a **League Setup Wizard**.
+
+When creating a competition, guide the manager through the process step by step.
+
+Example:
+
+Step 1: Competition Type
+
+Step 2: Participants
+
+Step 3: Gameweeks
+
+Step 4: Scoring
+
+Step 5: Tie Breakers
+
+Step 6: Review and Create
+
+---
+
+# DESIGN DIRECTION
+
+The application should feel:
+
+* Modern
+* Premium
+* Competitive
+* Sports-focused
+* Fun
+* Highly visual
+
+Avoid making it look like a traditional spreadsheet dashboard.
+
+Use:
+
+* Cards
+* League tables
+* Tournament brackets
+* Sports-style statistics
+* Team badges
+* Animated movement indicators
+* Trophy imagery
+* Match cards
+
+The experience should feel similar to a combination of:
+
+* ESPN Fantasy
+* The Athletic
+* UEFA tournament pages
+* FIFA World Cup tournament interfaces
+* Sleeper Fantasy
+
+---
+
+# MOBILE EXPERIENCE
+
+The application must be fully responsive.
+
+Most users will likely check:
+
+* Gameweek results
+* Matchups
+* Standings
+* Tournament brackets
+
+from their phones.
+
+Prioritize a strong mobile experience.
+
+The mobile interface should have bottom navigation for the most important areas.
+
+---
+
+# TECHNICAL ARCHITECTURE
+
+Build the application with:
+
+* React
+* TypeScript
+* Modern component architecture
+* PostgreSQL database
+* Authentication
+* Responsive design
+
+Create database tables for:
+
+* Users
+* Leagues
+* League Members
+* FPL Teams
+* Gameweeks
+* Gameweek Scores
+* Competitions
+* Competition Participants
+* Head-to-Head Matchups
+* Tournament Groups
+* Tournament Matches
+* Tournament Brackets
+* League Awards
+* Historical Records
+* Rivalries
+* Predictions
+
+Structure the application so additional competition types can easily be added later.
+
+---
+
+# IMPORTANT PRODUCT PRINCIPLES
+
+The website should NOT try to replace Fantasy Premier League.
+
+It should complement Fantasy Premier League.
+
+The core user experience should be:
+
+1. A group of friends already plays FPL.
+
+2. They connect their existing mini-league.
+
+3. Their league manager creates custom competitions.
+
+4. The website automatically uses FPL scores to determine results.
+
+5. Managers now have:
+
+* Head-to-head leagues
+* Cups
+* Group stages
+* Playoffs
+* Tournaments
+* Awards
+* League history
+* Rivalries
+* Records
+
+The goal is to make a normal FPL mini-league feel like a complete fantasy sports league with its own identity, competitions, history, and traditions.
+
+---
+
+# MVP PRIORITY
+
+Build the first version in phases.
+
+## Phase 1
+
+Focus on:
+
+* Authentication
+* Creating a league
+* Connecting an FPL mini-league
+* Importing managers
+* Importing gameweek scores
+* Traditional standings
+* Head-to-head matchups
+* Automated schedule generation
+* Head-to-head standings
+
+## Phase 2
+
+Add:
+
+* Knockout cups
+* Tournament brackets
+* Group-stage tournaments
+* World Cup-style competition
+* Playoffs
+
+## Phase 3
+
+Add:
+
+* Awards
+* Rivalries
+* Trophy Room
+* League History
+* Record Book
+* Power Rankings
+* Predictions
+
+Do not attempt to build every feature at once.
+
+Build the product with a strong database foundation and modular competition architecture so new competition formats can easily be added later.
+
+The ultimate vision is to become the **operating system for Fantasy Premier League mini-leagues**.
+
+Start by building the Phase 1 MVP as a fully functional application.

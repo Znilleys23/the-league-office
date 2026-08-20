@@ -171,6 +171,32 @@ export const ConnectFplLeagueResponse = zod.object({
 
 
 /**
+ * @summary Get league competitions and available cup entrants
+ */
+export const GetCompetitionOverviewParams = zod.object({
+  "leagueId": zod.coerce.string()
+})
+
+export const GetCompetitionOverviewResponse = zod.object({
+  "competitions": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "entrantCount": zod.number(),
+  "currentRound": zod.string()
+})),
+  "availableEntrants": zod.array(zod.object({
+  "id": zod.string(),
+  "manager": zod.string(),
+  "teamName": zod.string(),
+  "seed": zod.number(),
+  "initials": zod.string()
+}))
+})
+
+
+/**
  * @summary Create a competition
  */
 export const CreateCompetitionParams = zod.object({
@@ -178,18 +204,165 @@ export const CreateCompetitionParams = zod.object({
 })
 
 
+export const createCompetitionBodyOneEntrantIdsMin = 4;
+export const createCompetitionBodyOneEntrantIdsMax = 4;
 
 
-export const CreateCompetitionBody = zod.object({
+export const createCompetitionBodyTwoEntrantIdsMin = 8;
+export const createCompetitionBodyTwoEntrantIdsMax = 8;
+
+
+
+export const CreateCompetitionBody = zod.union([zod.object({
   "name": zod.string().min(1),
-  "type": zod.string()
-})
+  "type": zod.enum(['knockout']),
+  "entrantIds": zod.array(zod.string()).min(createCompetitionBodyOneEntrantIdsMin).max(createCompetitionBodyOneEntrantIdsMax),
+  "bracketSize": zod.literal(4)
+}),zod.object({
+  "name": zod.string().min(1),
+  "type": zod.enum(['knockout']),
+  "entrantIds": zod.array(zod.string()).min(createCompetitionBodyTwoEntrantIdsMin).max(createCompetitionBodyTwoEntrantIdsMax),
+  "bracketSize": zod.literal(8)
+})])
 
 export const CreateCompetitionResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "type": zod.string(),
-  "status": zod.string()
+  "status": zod.string(),
+  "entrantCount": zod.number(),
+  "currentRound": zod.string()
+}).and(zod.object({
+  "bracketSize": zod.number(),
+  "currentGameweek": zod.number(),
+  "rounds": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ties": zod.array(zod.object({
+  "id": zod.string(),
+  "home": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "away": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "homeScore": zod.number().nullable(),
+  "awayScore": zod.number().nullable(),
+  "status": zod.string(),
+  "winnerId": zod.string().nullable(),
+  "gameweek": zod.number().nullable()
+}))
+}))
+}))
+
+
+/**
+ * @summary Get a competition bracket
+ */
+export const GetCompetitionParams = zod.object({
+  "leagueId": zod.coerce.string(),
+  "competitionId": zod.coerce.string()
 })
+
+export const GetCompetitionResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "entrantCount": zod.number(),
+  "currentRound": zod.string()
+}).and(zod.object({
+  "bracketSize": zod.number(),
+  "currentGameweek": zod.number(),
+  "rounds": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ties": zod.array(zod.object({
+  "id": zod.string(),
+  "home": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "away": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "homeScore": zod.number().nullable(),
+  "awayScore": zod.number().nullable(),
+  "status": zod.string(),
+  "winnerId": zod.string().nullable(),
+  "gameweek": zod.number().nullable()
+}))
+}))
+}))
+
+
+/**
+ * @summary Resolve the next seeded cup tie
+ */
+export const AdvanceCompetitionParams = zod.object({
+  "leagueId": zod.coerce.string(),
+  "competitionId": zod.coerce.string()
+})
+
+
+
+
+export const AdvanceCompetitionBody = zod.object({
+  "tieId": zod.string().min(1),
+  "simulate": zod.boolean().optional()
+})
+
+export const AdvanceCompetitionResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "entrantCount": zod.number(),
+  "currentRound": zod.string()
+}).and(zod.object({
+  "bracketSize": zod.number(),
+  "currentGameweek": zod.number(),
+  "rounds": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ties": zod.array(zod.object({
+  "id": zod.string(),
+  "home": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "away": zod.object({
+  "id": zod.string().optional(),
+  "manager": zod.string().optional(),
+  "teamName": zod.string().optional(),
+  "seed": zod.number().optional(),
+  "initials": zod.string().optional()
+}).nullable(),
+  "homeScore": zod.number().nullable(),
+  "awayScore": zod.number().nullable(),
+  "status": zod.string(),
+  "winnerId": zod.string().nullable(),
+  "gameweek": zod.number().nullable()
+}))
+}))
+}))
 
 

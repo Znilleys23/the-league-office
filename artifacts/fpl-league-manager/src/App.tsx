@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, Show, SignIn, SignUp } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import {
   Activity as ActivityIcon,
   ArrowDownRight,
+  ArrowLeft,
   ArrowUpRight,
   Award,
   BarChart3,
@@ -29,14 +30,19 @@ import {
   Zap,
 } from 'lucide-react';
 import {
+  getGetCompetitionOverviewQueryKey,
+  getGetCompetitionQueryKey,
   getGetHeadToHeadScheduleQueryKey,
   getGetHeadToHeadStandingsQueryKey,
   getGetLeagueDashboardQueryKey,
   getGetLeagueStandingsQueryKey,
   getHealthCheckQueryKey,
+  useAdvanceCompetition,
   useConnectFplLeague,
   useCreateCompetition,
   useCreateLeague,
+  useGetCompetition,
+  useGetCompetitionOverview,
   useGetHeadToHeadSchedule,
   useGetHeadToHeadStandings,
   useGetLeagueDashboard,
@@ -45,7 +51,6 @@ import {
 } from '@workspace/api-client-react';
 import type {
   Activity,
-  Competition,
   HeadToHeadStanding,
   League,
   LeagueDashboard,
@@ -347,24 +352,265 @@ function HeadToHeadPage({ leagueId }: { leagueId: string }) {
 }
 
 function CompetitionsPage({ leagueId }: { leagueId: string }) {
+  const query = useGetCompetitionOverview(leagueId, { query: { enabled: Boolean(leagueId), queryKey: getGetCompetitionOverviewQueryKey(leagueId) } });
   const createCompetition = useCreateCompetition();
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [name, setName] = useState('');
-  const [type, setType] = useState('knockout');
+  const [bracketSize, setBracketSize] = useState<4 | 8>(8);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [message, setMessage] = useState('');
+
+  const overview = query.data;
+  const competitions = overview?.competitions ?? [];
+  const availableEntrants = overview?.availableEntrants ?? [];
+
+  const initializedForLeagueId = useRef<string | null>(null);
+  useEffect(() => {
+    if (availableEntrants.length > 0 && initializedForLeagueId.current !== leagueId) {
+      initializedForLeagueId.current = leagueId;
+      setSelectedIds(availableEntrants.slice(0, bracketSize).map((e) => e.id));
+    }
+  }, [availableEntrants, leagueId, bracketSize]);
+
+  const handleBracketSizeChange = (size: 4 | 8) => {
+    setBracketSize(size);
+    setSelectedIds(availableEntrants.slice(0, size).map((e) => e.id));
+  };
+
+  const toggleEntrant = (id: string) => {
+    setSelectedIds((curr) => {
+      if (curr.includes(id)) return curr.filter((x) => x !== id);
+      if (curr.length < bracketSize) return [...curr, id];
+      return curr;
+    });
+  };
+
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!name.trim()) return;
-    createCompetition.mutate({ leagueId, data: { name: name.trim(), type } }, {
+    if (selectedIds.length !== bracketSize) {
+      setMessage(`Select exactly ${bracketSize} managers to form the bracket.`);
+      return;
+    }
+    setMessage('');
+    createCompetition.mutate({ leagueId, data: { name: name.trim(), type: 'knockout', bracketSize, entrantIds: selectedIds } }, {
       onSuccess: (competition) => {
-        setCompetitions((current) => [competition, ...current]);
         setName('');
-        setMessage(`${competition.name} is live in the room.`);
+        queryClient.invalidateQueries({ queryKey: getGetCompetitionOverviewQueryKey(leagueId) });
+        setLocation(`/competitions/${competition.id}`);
       },
       onError: () => setMessage('Could not start that competition. Try again.'),
     });
   };
-  return <div className="mx-auto max-w-[1200px]"><PageTitle kicker="Side quests / season 24–25" title="Competitions" detail="Give the run-in a second scoreboard. Create a side quest, then make it everyone&apos;s problem." /><div className="grid gap-6 lg:grid-cols-[.78fr_1.22fr]"><section className="panel animate-rise stagger-1 rounded-2xl p-6 sm:p-8"><div className="mb-6 flex items-start justify-between"><div><div className="eyebrow text-orange-300">New competition</div><h2 className="mt-1 font-display text-xl font-bold text-stone-100">Add some stakes</h2></div><span className="rounded-xl bg-orange-300/10 p-3 text-orange-300"><Trophy size={20} /></span></div><form onSubmit={submit} className="space-y-5"><label className="block"><span className="mb-2 block text-xs font-bold text-slate-300">Competition name</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="The run-in cup" className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-3 text-sm text-stone-100 outline-none transition-colors placeholder:text-slate-600 focus:border-lime-300/70" data-testid="input-competition-name" /></label><label className="block"><span className="mb-2 block text-xs font-bold text-slate-300">Format</span><select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-[#111a2b] px-4 py-3 text-sm text-stone-100 outline-none focus:border-lime-300/70" data-testid="select-competition-type"><option value="knockout">Knockout cup</option><option value="classic">Classic points</option><option value="weekly">Weekly sprint</option></select></label><button type="submit" disabled={createCompetition.isPending || !name.trim()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3 text-sm font-bold text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50" data-testid="button-create-competition">{createCompetition.isPending ? 'Creating…' : <><Plus size={16} /> Create competition</>}</button>{message ? <p className={`text-center text-xs ${message.includes('Could not') ? 'text-orange-300' : 'text-lime-300'}`} data-testid="status-competition">{message}</p> : null}</form></section><section className="panel animate-rise stagger-2 rounded-2xl p-6 sm:p-8"><div className="flex items-center justify-between"><div><div className="eyebrow">In this league</div><h2 className="mt-1 font-display text-xl font-bold text-stone-100">Competition board</h2></div><span className="font-mono text-[10px] uppercase tracking-[.14em] text-slate-600">{competitions.length} active</span></div>{competitions.length === 0 ? <div className="flex min-h-[285px] flex-col items-center justify-center text-center"><div className="mb-4 rounded-2xl border border-slate-700 bg-slate-900/60 p-4 text-slate-500"><ClipboardList size={24} /></div><h3 className="font-display text-lg font-bold text-stone-200">No side quests yet</h3><p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">The league is still waiting for someone to make the first move.</p></div> : <div className="mt-6 space-y-3">{competitions.map((competition) => <div key={competition.id} className="flex items-center gap-4 rounded-xl border border-slate-700/70 bg-slate-950/20 p-4" data-testid={`competition-card-${competition.id}`}><span className="rounded-xl bg-lime-300/10 p-3 text-lime-300"><Trophy size={17} /></span><div className="flex-1"><div className="text-sm font-bold text-stone-100">{competition.name}</div><div className="mt-1 font-mono text-[10px] uppercase tracking-[.12em] text-slate-500">{competition.type} · {competition.status}</div></div><span className="rounded-full bg-lime-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-lime-300">Live</span></div>)}</div>}</section></div></div>;
+
+  if (query.isLoading) {
+    return <div className="mx-auto max-w-[1200px]"><Skeleton className="h-[400px]" /></div>;
+  }
+  if (query.isError && !overview) {
+    return <div className="mx-auto max-w-[1200px]"><DataError onRetry={() => query.refetch()} /></div>;
+  }
+
+  return (
+    <div className="mx-auto max-w-[1200px]">
+      <PageTitle kicker="Side quests / season 24–25" title="Competitions" detail="Give the run-in a second scoreboard. Create a side quest, then make it everyone's problem." />
+      <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
+        <section className="panel animate-rise stagger-1 rounded-2xl p-6 sm:p-8">
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <div className="eyebrow text-orange-300">New knockout cup</div>
+              <h2 className="mt-1 font-display text-xl font-bold text-stone-100">Draw the bracket</h2>
+            </div>
+            <span className="rounded-xl bg-orange-300/10 p-3 text-orange-300"><Trophy size={20} /></span>
+          </div>
+          <form onSubmit={submit} className="space-y-6">
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold text-slate-300">Competition name</span>
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="The run-in cup" className="w-full rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-3 text-sm text-stone-100 outline-none transition-colors placeholder:text-slate-600 focus:border-lime-300/70" data-testid="input-competition-name" />
+            </label>
+            <div className="block">
+              <span className="mb-2 block text-xs font-bold text-slate-300">Bracket size</span>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => handleBracketSizeChange(4)} className={`flex-1 rounded-xl border px-4 py-3 text-sm font-bold transition-all ${bracketSize === 4 ? 'border-lime-300/50 bg-lime-300/10 text-lime-300' : 'border-slate-700 bg-slate-950/30 text-slate-400 hover:border-slate-500'}`} data-testid="btn-size-4">4 managers</button>
+                <button type="button" onClick={() => handleBracketSizeChange(8)} className={`flex-1 rounded-xl border px-4 py-3 text-sm font-bold transition-all ${bracketSize === 8 ? 'border-lime-300/50 bg-lime-300/10 text-lime-300' : 'border-slate-700 bg-slate-950/30 text-slate-400 hover:border-slate-500'}`} data-testid="btn-size-8">8 managers</button>
+              </div>
+            </div>
+            <div className="block">
+              <span className="mb-2 flex items-center justify-between text-xs font-bold text-slate-300">
+                <span>Select entrants</span>
+                <span className={`font-mono text-[10px] ${selectedIds.length === bracketSize ? 'text-lime-300' : 'text-orange-300'}`}>{selectedIds.length} / {bracketSize} selected</span>
+              </span>
+              <div className="max-h-[260px] space-y-2 overflow-y-auto pr-2 rounded-xl border border-slate-700/80 bg-slate-950/20 p-3">
+                {availableEntrants.map((entrant) => {
+                  const selected = selectedIds.includes(entrant.id);
+                  const disabled = !selected && selectedIds.length >= bracketSize;
+                  return (
+                    <button type="button" key={entrant.id} disabled={disabled} onClick={() => toggleEntrant(entrant.id)} className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${selected ? 'border-lime-300/40 bg-lime-300/10' : disabled ? 'cursor-not-allowed border-slate-800 bg-transparent opacity-50' : 'border-slate-800 bg-transparent hover:border-slate-600'}`} data-testid={`btn-select-${entrant.id}`}>
+                      <div className="flex items-center gap-3">
+                        <Avatar label={entrant.initials} />
+                        <div>
+                          <div className={`text-xs font-bold ${selected ? 'text-lime-200' : 'text-stone-200'}`}>{entrant.manager}</div>
+                          <div className="text-[10px] text-slate-500">{entrant.teamName} <span className="mx-1">·</span> Seed {entrant.seed}</div>
+                        </div>
+                      </div>
+                      <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-lime-300 bg-lime-300' : 'border-slate-600'}`}>{selected && <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />}</div>
+                    </button>
+                  );
+                })}
+                {availableEntrants.length === 0 && <div className="text-center text-xs text-slate-500 py-4">No eligible entrants found.</div>}
+              </div>
+            </div>
+            <button type="submit" disabled={createCompetition.isPending || !name.trim() || selectedIds.length !== bracketSize} className="flex w-full items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3.5 text-sm font-bold text-slate-950 transition-all hover:-translate-y-0.5 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50" data-testid="button-create-competition">
+              {createCompetition.isPending ? 'Creating…' : <><Plus size={16} /> Start tournament</>}
+            </button>
+            {message ? <p className={`text-center text-xs ${message.includes('Could not') || message.includes('exactly') ? 'text-orange-300' : 'text-lime-300'}`} data-testid="status-competition">{message}</p> : null}
+          </form>
+        </section>
+
+        <section className="panel animate-rise stagger-2 rounded-2xl p-6 sm:p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="eyebrow">In this league</div>
+              <h2 className="mt-1 font-display text-xl font-bold text-stone-100">Active cups</h2>
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-[.14em] text-slate-600">{competitions.length} active</span>
+          </div>
+          {competitions.length === 0 ? (
+            <div className="flex min-h-[285px] flex-col items-center justify-center text-center">
+              <div className="mb-4 rounded-2xl border border-slate-700 bg-slate-900/60 p-4 text-slate-500"><ClipboardList size={24} /></div>
+              <h3 className="font-display text-lg font-bold text-stone-200">No side quests yet</h3>
+              <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">The league is still waiting for someone to draw the bracket.</p>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {competitions.map((competition) => (
+                <Link href={`/competitions/${competition.id}`} key={competition.id} className="group flex items-center gap-4 rounded-xl border border-slate-700/70 bg-slate-950/20 p-4 transition-colors hover:border-lime-300/40" data-testid={`competition-card-${competition.id}`}>
+                  <span className="rounded-xl bg-lime-300/10 p-3 text-lime-300 transition-transform group-hover:scale-110"><Trophy size={17} /></span>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-stone-100 transition-colors group-hover:text-lime-300">{competition.name}</div>
+                    <div className="mt-1 font-mono text-[10px] uppercase tracking-[.12em] text-slate-500">{competition.type} · {competition.status}</div>
+                  </div>
+                  <ChevronRight size={16} className="text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-lime-300" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function CompetitionDetailsPage({ leagueId, competitionId }: { leagueId: string; competitionId: string }) {
+  const query = useGetCompetition(leagueId, competitionId, { query: { enabled: Boolean(leagueId && competitionId), queryKey: getGetCompetitionQueryKey(leagueId, competitionId) } });
+  const advance = useAdvanceCompetition();
+  const queryClient = useQueryClient();
+
+  if (query.isLoading) {
+    return <div className="mx-auto max-w-[1440px]"><Skeleton className="h-[600px]" /></div>;
+  }
+  if (!query.data) return <div className="mx-auto max-w-[1440px]"><DataError onRetry={() => query.refetch()} /></div>;
+
+  const competition = query.data;
+
+  const handleResolve = (tieId: string) => {
+    advance.mutate({ leagueId, competitionId, data: { tieId, simulate: true } }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetCompetitionQueryKey(leagueId, competitionId) });
+        queryClient.invalidateQueries({ queryKey: getGetCompetitionOverviewQueryKey(leagueId) });
+      }
+    });
+  };
+
+  return (
+    <div className="mx-auto max-w-[1440px] min-h-[calc(100dvh-120px)] flex flex-col">
+      <div className="mb-8">
+        <Link href="/competitions" className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-lime-300 mb-6 transition-colors">
+          <ArrowLeft size={14} /> Back to competitions
+        </Link>
+        <PageTitle kicker={`${competition.type} / ${competition.entrantCount} managers`} title={competition.name} detail={`Current status: ${competition.status}. The road to the final is set.`} />
+      </div>
+
+      <div className="flex-1 overflow-x-auto pb-8 mobile-scroll">
+        <div className="flex gap-12 min-w-max h-full">
+          {competition.rounds.map((round, rIndex) => (
+            <div key={round.id} className="flex flex-col gap-6 w-[300px] shrink-0 justify-around">
+              <div className="eyebrow text-center border-b border-slate-800/80 pb-3">{round.label}</div>
+              <div className="flex flex-col justify-around flex-1" style={{ gap: `${Math.pow(2, rIndex) * 1.5}rem` }}>
+                {round.ties.map((tie, tIndex) => (
+                  <div key={tie.id} className="relative animate-rise">
+                    {rIndex > 0 && (
+                      <div className="absolute top-1/2 -left-6 w-6 h-px bg-slate-700/80" />
+                    )}
+                    {rIndex < competition.rounds.length - 1 && (
+                      <>
+                        <div className="absolute top-1/2 -right-6 w-6 h-px bg-slate-700/80" />
+                        {tIndex % 2 === 0 ? (
+                           <div className="absolute top-1/2 -right-6 w-px h-[calc(50%+0.75rem)] bg-slate-700/80" style={{ height: `calc(50% + ${Math.pow(2, rIndex) * 0.75}rem)` }} />
+                        ) : (
+                           <div className="absolute bottom-1/2 -right-6 w-px h-[calc(50%+0.75rem)] bg-slate-700/80" style={{ height: `calc(50% + ${Math.pow(2, rIndex) * 0.75}rem)` }} />
+                        )}
+                      </>
+                    )}
+
+                    <div className={`panel rounded-2xl overflow-hidden transition-all ${tie.winnerId ? 'border-slate-800/80' : 'border-lime-300/30 shadow-[0_0_20px_rgba(191,225,69,0.05)]'}`} data-testid={`tie-${tie.id}`}>
+                      <div className={`p-4 flex items-center justify-between border-b border-slate-800/80 ${tie.winnerId === tie.home?.id && tie.winnerId ? 'bg-lime-300/[.03]' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          <Avatar label={tie.home?.initials} />
+                          <div className="flex flex-col">
+                            <span className={`text-xs font-bold ${tie.winnerId === tie.home?.id && tie.winnerId ? 'text-lime-300' : tie.winnerId && tie.winnerId !== tie.home?.id ? 'text-slate-500' : tie.home ? 'text-stone-100' : 'text-slate-600'}`}>{tie.home?.manager || 'TBD'}</span>
+                            <span className="text-[10px] text-slate-500">{tie.home?.teamName || '—'}</span>
+                          </div>
+                        </div>
+                        <div className={`text-xl font-display font-bold ${tie.winnerId === tie.home?.id && tie.winnerId ? 'text-lime-300' : tie.winnerId && tie.winnerId !== tie.home?.id ? 'text-slate-600' : tie.homeScore !== null ? 'text-stone-100' : 'text-slate-700'}`}>{tie.homeScore ?? '-'}</div>
+                      </div>
+
+                      <div className={`p-4 flex items-center justify-between ${tie.winnerId === tie.away?.id && tie.winnerId ? 'bg-lime-300/[.03]' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          <Avatar label={tie.away?.initials} />
+                          <div className="flex flex-col">
+                            <span className={`text-xs font-bold ${tie.winnerId === tie.away?.id && tie.winnerId ? 'text-lime-300' : tie.winnerId && tie.winnerId !== tie.away?.id ? 'text-slate-500' : tie.away ? 'text-stone-100' : 'text-slate-600'}`}>{tie.away?.manager || 'TBD'}</span>
+                            <span className="text-[10px] text-slate-500">{tie.away?.teamName || '—'}</span>
+                          </div>
+                        </div>
+                        <div className={`text-xl font-display font-bold ${tie.winnerId === tie.away?.id && tie.winnerId ? 'text-lime-300' : tie.winnerId && tie.winnerId !== tie.away?.id ? 'text-slate-600' : tie.awayScore !== null ? 'text-stone-100' : 'text-slate-700'}`}>{tie.awayScore ?? '-'}</div>
+                      </div>
+
+                      <div className="border-t border-slate-800/80 bg-slate-950/60 p-2">
+                        {tie.winnerId ? (
+                          <div className="px-2 py-1 text-center font-mono text-[9px] uppercase tracking-[.14em] text-slate-500">
+                            Decided · GW {tie.gameweek ?? competition.currentGameweek}
+                          </div>
+                        ) : tie.home && tie.away ? (
+                          <>
+                            <div className="px-2 pb-2 text-center font-mono text-[9px] uppercase tracking-[.14em] text-orange-300">
+                              Scheduled · GW {tie.gameweek ?? competition.currentGameweek + 1}
+                            </div>
+                            <button
+                              onClick={() => handleResolve(tie.id)}
+                              disabled={advance.isPending}
+                              className="w-full rounded border border-lime-300/20 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-lime-300 transition-colors hover:bg-lime-300/10 hover:text-lime-200 disabled:opacity-50"
+                              data-testid={`btn-resolve-${tie.id}`}
+                            >
+                              {advance.isPending ? 'Simulating...' : 'Resolve demo result'}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="px-2 py-1 text-center font-mono text-[9px] uppercase tracking-[.14em] text-slate-600">
+                            Awaiting winner
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ConnectPage({ onConnected }: { onConnected: (league: League) => void }) {
@@ -404,7 +650,7 @@ function SignUpPage() {
 
 function Router({ leagueId, onConnected }: { leagueId: string; onConnected: (league: League) => void }) {
   const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}><Switch><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><AppShell><Switch><Route path="/" component={() => <DashboardPage leagueId={leagueId} />} /><Route path="/standings" component={() => <StandingsPage leagueId={leagueId} />} /><Route path="/head-to-head" component={() => <HeadToHeadPage leagueId={leagueId} />} /><Route path="/competitions" component={() => <CompetitionsPage leagueId={leagueId} />} /><Route path="/connect" component={() => <ConnectPage onConnected={onConnected} />} /><Route component={NotFound} /></Switch></AppShell></Switch></ErrorBoundary>;
+  return <ErrorBoundary resetKey={location}><Switch><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><AppShell><Switch><Route path="/" component={() => <DashboardPage leagueId={leagueId} />} /><Route path="/standings" component={() => <StandingsPage leagueId={leagueId} />} /><Route path="/head-to-head" component={() => <HeadToHeadPage leagueId={leagueId} />} /><Route path="/competitions" component={() => <CompetitionsPage leagueId={leagueId} />} /><Route path="/competitions/:competitionId" component={(params) => <CompetitionDetailsPage leagueId={leagueId} competitionId={params.params.competitionId} />} /><Route path="/connect" component={() => <ConnectPage onConnected={onConnected} />} /><Route component={NotFound} /></Switch></AppShell></Switch></ErrorBoundary>;
 }
 
 function App() {

@@ -125,6 +125,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/League"
   /leagues/{leagueId}/competitions:
+    get:
+      operationId: getCompetitionOverview
+      tags: [leagues]
+      summary: Get league competitions and available cup entrants
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+      responses:
+        "200":
+          description: League competition overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionOverview"
+        "400":
+          description: Invalid league
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: createCompetition
       tags: [leagues]
@@ -143,11 +162,83 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Competition"
+                $ref: "#/components/schemas/CupCompetition"
+        "400":
+          description: Invalid cup setup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /leagues/{leagueId}/competitions/{competitionId}:
+    get:
+      operationId: getCompetition
+      tags: [leagues]
+      summary: Get a competition bracket
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+        - $ref: "#/components/parameters/CompetitionId"
+      responses:
+        "200":
+          description: Competition bracket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CupCompetition"
+        "400":
+          description: Invalid competition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Competition not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /leagues/{leagueId}/competitions/{competitionId}/advance:
+    post:
+      operationId: advanceCompetition
+      tags: [leagues]
+      summary: Resolve the next seeded cup tie
+      parameters:
+        - $ref: "#/components/parameters/LeagueId"
+        - $ref: "#/components/parameters/CompetitionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CupAdvanceInput"
+      responses:
+        "200":
+          description: Updated competition bracket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CupCompetition"
+        "400":
+          description: Tie cannot be resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Competition not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   parameters:
     LeagueId:
       name: leagueId
+      in: path
+      required: true
+      schema:
+        type: string
+    CompetitionId:
+      name: competitionId
       in: path
       required: true
       schema:
@@ -247,18 +338,118 @@ components:
         score: { type: number }
     Competition:
       type: object
-      required: [id, name, type, status]
+      required: [id, name, type, status, entrantCount, currentRound]
       properties:
         id: { type: string }
         name: { type: string }
         type: { type: string }
         status: { type: string }
-    CompetitionInput:
+        entrantCount: { type: number }
+        currentRound: { type: string }
+    CompetitionOverview:
       type: object
-      required: [name, type]
+      required: [competitions, availableEntrants]
       properties:
-        name: { type: string, minLength: 1 }
-        type: { type: string }
+        competitions:
+          type: array
+          items: { $ref: "#/components/schemas/Competition" }
+        availableEntrants:
+          type: array
+          items: { $ref: "#/components/schemas/CupEntrant" }
+    CupEntrant:
+      type: object
+      required: [id, manager, teamName, seed, initials]
+      properties:
+        id: { type: string }
+        manager: { type: string }
+        teamName: { type: string }
+        seed: { type: number }
+        initials: { type: string }
+    CupTie:
+      type: object
+      required: [id, home, away, homeScore, awayScore, status, winnerId, gameweek]
+      properties:
+        id: { type: string }
+        home:
+          type: ["object", "null"]
+          additionalProperties: false
+          properties:
+            id: { type: string }
+            manager: { type: string }
+            teamName: { type: string }
+            seed: { type: number }
+            initials: { type: string }
+        away:
+          type: ["object", "null"]
+          additionalProperties: false
+          properties:
+            id: { type: string }
+            manager: { type: string }
+            teamName: { type: string }
+            seed: { type: number }
+            initials: { type: string }
+        homeScore: { type: ["number", "null"] }
+        awayScore: { type: ["number", "null"] }
+        status: { type: string }
+        winnerId: { type: ["string", "null"] }
+        gameweek: { type: ["number", "null"] }
+    CupRound:
+      type: object
+      required: [id, label, ties]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        ties:
+          type: array
+          items: { $ref: "#/components/schemas/CupTie" }
+    CupCompetition:
+      allOf:
+        - $ref: "#/components/schemas/Competition"
+        - type: object
+          required: [bracketSize, currentGameweek, rounds]
+          properties:
+            bracketSize: { type: number }
+            currentGameweek: { type: number }
+            rounds:
+              type: array
+              items: { $ref: "#/components/schemas/CupRound" }
+    CompetitionInput:
+      oneOf:
+        - type: object
+          required: [name, type, entrantIds, bracketSize]
+          properties:
+            name: { type: string, minLength: 1 }
+            type: { type: string, enum: [knockout] }
+            entrantIds:
+              type: array
+              uniqueItems: true
+              minItems: 4
+              maxItems: 4
+              items: { type: string }
+            bracketSize: { type: number, const: 4 }
+        - type: object
+          required: [name, type, entrantIds, bracketSize]
+          properties:
+            name: { type: string, minLength: 1 }
+            type: { type: string, enum: [knockout] }
+            entrantIds:
+              type: array
+              uniqueItems: true
+              minItems: 8
+              maxItems: 8
+              items: { type: string }
+            bracketSize: { type: number, const: 8 }
+    CupAdvanceInput:
+      type: object
+      required: [tieId]
+      properties:
+        tieId: { type: string, minLength: 1 }
+        simulate: { type: boolean }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
     HealthStatus:
       type: object
       properties:

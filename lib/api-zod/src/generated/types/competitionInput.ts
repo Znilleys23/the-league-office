@@ -6,8 +6,24 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CompetitionInput {
+export type CompetitionInput = {
   /** @minLength 1 */
   name: string;
-  type: string;
-}
+  type: 'knockout';
+  /**
+     * @minItems 4
+     * @maxItems 4
+     */
+  entrantIds: string[];
+  bracketSize: 4;
+} | {
+  /** @minLength 1 */
+  name: string;
+  type: 'knockout';
+  /**
+     * @minItems 8
+     * @maxItems 8
+     */
+  entrantIds: string[];
+  bracketSize: 8;
+};

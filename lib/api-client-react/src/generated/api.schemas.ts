@@ -94,12 +94,104 @@ export interface Competition {
   name: string;
   type: string;
   status: string;
+  entrantCount: number;
+  currentRound: string;
 }
 
-export interface CompetitionInput {
+export interface CupEntrant {
+  id: string;
+  manager: string;
+  teamName: string;
+  seed: number;
+  initials: string;
+}
+
+export interface CompetitionOverview {
+  competitions: Competition[];
+  availableEntrants: CupEntrant[];
+}
+
+/**
+ * @nullable
+ */
+export type CupTieHome = {
+  id?: string;
+  manager?: string;
+  teamName?: string;
+  seed?: number;
+  initials?: string;
+} | null;
+
+/**
+ * @nullable
+ */
+export type CupTieAway = {
+  id?: string;
+  manager?: string;
+  teamName?: string;
+  seed?: number;
+  initials?: string;
+} | null;
+
+export interface CupTie {
+  id: string;
+  /** @nullable */
+  home: CupTieHome;
+  /** @nullable */
+  away: CupTieAway;
+  /** @nullable */
+  homeScore: number | null;
+  /** @nullable */
+  awayScore: number | null;
+  status: string;
+  /** @nullable */
+  winnerId: string | null;
+  /** @nullable */
+  gameweek: number | null;
+}
+
+export interface CupRound {
+  id: string;
+  label: string;
+  ties: CupTie[];
+}
+
+export type CupCompetition = Competition & {
+  bracketSize: number;
+  currentGameweek: number;
+  rounds: CupRound[];
+};
+
+export type CompetitionInput = {
   /** @minLength 1 */
   name: string;
-  type: string;
+  type: 'knockout';
+  /**
+     * @minItems 4
+     * @maxItems 4
+     */
+  entrantIds: string[];
+  bracketSize: 4;
+} | {
+  /** @minLength 1 */
+  name: string;
+  type: 'knockout';
+  /**
+     * @minItems 8
+     * @maxItems 8
+     */
+  entrantIds: string[];
+  bracketSize: 8;
+};
+
+export interface CupAdvanceInput {
+  /** @minLength 1 */
+  tieId: string;
+  simulate?: boolean;
+}
+
+export interface ErrorResponse {
+  error: string;
 }
 
 export interface HealthStatus {

@@ -20,8 +20,11 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  Competition,
   CompetitionInput,
+  CompetitionOverview,
+  CupAdvanceInput,
+  CupCompetition,
+  ErrorResponse,
   FplConnectInput,
   HeadToHeadStanding,
   HealthStatus,
@@ -587,6 +590,83 @@ export const useConnectFplLeague = <TError = ErrorType<unknown>,
       return useMutation(getConnectFplLeagueMutationOptions(options));
     }
 
+export const getGetCompetitionOverviewUrl = (leagueId: string,) => {
+
+
+
+
+  return `/api/leagues/${leagueId}/competitions`
+}
+
+/**
+ * @summary Get league competitions and available cup entrants
+ */
+export const getCompetitionOverview = async (leagueId: string, options?: Parameters<typeof customFetch>[1]): Promise<CompetitionOverview> => {
+
+  return customFetch<CompetitionOverview>(getGetCompetitionOverviewUrl(leagueId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCompetitionOverviewQueryKey = (leagueId: string,) => {
+    return [
+    `/api/leagues/${leagueId}/competitions`
+    ] as const;
+    }
+
+
+export const getGetCompetitionOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getCompetitionOverview>>, TError = ErrorType<ErrorResponse>>(leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompetitionOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCompetitionOverviewQueryKey(leagueId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCompetitionOverview>>> = ({ signal }) => getCompetitionOverview(leagueId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCompetitionOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCompetitionOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getCompetitionOverview>>>
+export type GetCompetitionOverviewQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get league competitions and available cup entrants
+ */
+
+export function useGetCompetitionOverview<TData = Awaited<ReturnType<typeof getCompetitionOverview>>, TError = ErrorType<ErrorResponse>>(
+ leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompetitionOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCompetitionOverviewQueryOptions(leagueId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateCompetitionUrl = (leagueId: string,) => {
 
 
@@ -599,9 +679,9 @@ export const getCreateCompetitionUrl = (leagueId: string,) => {
  * @summary Create a competition
  */
 export const createCompetition = async (leagueId: string,
-    competitionInput: CompetitionInput, options?: Parameters<typeof customFetch>[1]): Promise<Competition> => {
+    competitionInput: CompetitionInput, options?: Parameters<typeof customFetch>[1]): Promise<CupCompetition> => {
 
-  return customFetch<Competition>(getCreateCompetitionUrl(leagueId),
+  return customFetch<CupCompetition>(getCreateCompetitionUrl(leagueId),
   {
     ...options,
     method: 'POST',
@@ -614,7 +694,7 @@ export const createCompetition = async (leagueId: string,
 
 
 
-export const getCreateCompetitionMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateCompetitionMutationOptions = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCompetition>>, TError,{leagueId: string;data: BodyType<CompetitionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCompetition>>, TError,{leagueId: string;data: BodyType<CompetitionInput>}, TContext> => {
 
@@ -643,12 +723,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateCompetitionMutationResult = NonNullable<Awaited<ReturnType<typeof createCompetition>>>
     export type CreateCompetitionMutationBody = BodyType<CompetitionInput>
-    export type CreateCompetitionMutationError = ErrorType<unknown>
+    export type CreateCompetitionMutationError = ErrorType<ErrorResponse>
 
     /**
  * @summary Create a competition
  */
-export const useCreateCompetition = <TError = ErrorType<unknown>,
+export const useCreateCompetition = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCompetition>>, TError,{leagueId: string;data: BodyType<CompetitionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createCompetition>>,
@@ -657,5 +737,161 @@ export const useCreateCompetition = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateCompetitionMutationOptions(options));
+    }
+
+export const getGetCompetitionUrl = (leagueId: string,
+    competitionId: string,) => {
+
+
+
+
+  return `/api/leagues/${leagueId}/competitions/${competitionId}`
+}
+
+/**
+ * @summary Get a competition bracket
+ */
+export const getCompetition = async (leagueId: string,
+    competitionId: string, options?: Parameters<typeof customFetch>[1]): Promise<CupCompetition> => {
+
+  return customFetch<CupCompetition>(getGetCompetitionUrl(leagueId,competitionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCompetitionQueryKey = (leagueId: string,
+    competitionId: string,) => {
+    return [
+    `/api/leagues/${leagueId}/competitions/${competitionId}`
+    ] as const;
+    }
+
+
+export const getGetCompetitionQueryOptions = <TData = Awaited<ReturnType<typeof getCompetition>>, TError = ErrorType<ErrorResponse>>(leagueId: string,
+    competitionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompetition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCompetitionQueryKey(leagueId,competitionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCompetition>>> = ({ signal }) => getCompetition(leagueId,competitionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined && competitionId !== null && competitionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCompetition>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCompetitionQueryResult = NonNullable<Awaited<ReturnType<typeof getCompetition>>>
+export type GetCompetitionQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get a competition bracket
+ */
+
+export function useGetCompetition<TData = Awaited<ReturnType<typeof getCompetition>>, TError = ErrorType<ErrorResponse>>(
+ leagueId: string,
+    competitionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompetition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCompetitionQueryOptions(leagueId,competitionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdvanceCompetitionUrl = (leagueId: string,
+    competitionId: string,) => {
+
+
+
+
+  return `/api/leagues/${leagueId}/competitions/${competitionId}/advance`
+}
+
+/**
+ * @summary Resolve the next seeded cup tie
+ */
+export const advanceCompetition = async (leagueId: string,
+    competitionId: string,
+    cupAdvanceInput: CupAdvanceInput, options?: Parameters<typeof customFetch>[1]): Promise<CupCompetition> => {
+
+  return customFetch<CupCompetition>(getAdvanceCompetitionUrl(leagueId,competitionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(cupAdvanceInput)
+  }
+);}
+
+
+
+
+
+export const getAdvanceCompetitionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof advanceCompetition>>, TError,{leagueId: string;competitionId: string;data: BodyType<CupAdvanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof advanceCompetition>>, TError,{leagueId: string;competitionId: string;data: BodyType<CupAdvanceInput>}, TContext> => {
+
+const mutationKey = ['advanceCompetition'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof advanceCompetition>>, {leagueId: string;competitionId: string;data: BodyType<CupAdvanceInput>}> = (props) => {
+          const {leagueId,competitionId,data} = props ?? {};
+
+          return  advanceCompetition(leagueId,competitionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdvanceCompetitionMutationResult = NonNullable<Awaited<ReturnType<typeof advanceCompetition>>>
+    export type AdvanceCompetitionMutationBody = BodyType<CupAdvanceInput>
+    export type AdvanceCompetitionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Resolve the next seeded cup tie
+ */
+export const useAdvanceCompetition = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof advanceCompetition>>, TError,{leagueId: string;competitionId: string;data: BodyType<CupAdvanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof advanceCompetition>>,
+        TError,
+        {leagueId: string;competitionId: string;data: BodyType<CupAdvanceInput>},
+        TContext
+      > => {
+      return useMutation(getAdvanceCompetitionMutationOptions(options));
     }
 

@@ -6,11 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Competition {
+export interface CupEntrant {
   id: string;
-  name: string;
-  type: string;
-  status: string;
-  entrantCount: number;
-  currentRound: string;
+  manager: string;
+  teamName: string;
+  seed: number;
+  initials: string;
 }

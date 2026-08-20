@@ -5,12 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CupTie } from './cupTie';
 
-export interface Competition {
+export interface CupRound {
   id: string;
-  name: string;
-  type: string;
-  status: string;
-  entrantCount: number;
-  currentRound: string;
+  label: string;
+  ties: CupTie[];
 }

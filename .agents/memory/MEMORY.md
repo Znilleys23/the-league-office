@@ -1,1 +1,2 @@
 - [Orval Zod numeric schema compatibility](orval-zod-number-format.md) — use OpenAPI numbers for whole values until the generator/runtime mismatch is resolved.
+- [GitHub history import](github-history-import.md) — empty GitHub repos reject Git object APIs until bootstrapped with an initial contents commit.
